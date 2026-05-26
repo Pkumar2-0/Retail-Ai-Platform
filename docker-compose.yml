@@ -1,0 +1,40 @@
+services:
+  backend:
+    image: retail-ai-backend:latest
+    build:
+      context: .
+      dockerfile: Dockerfile.backend
+    container_name: retail-ai-backend
+    env_file:
+      - .env
+    environment:
+      DATABASE_NAME: retail_ai
+      LOCAL_MONGO_URI: mongodb://mongo:27017
+    ports:
+      - "8000:8000"
+    depends_on:
+      - mongo
+
+  streamlit:
+    image: retail-ai-streamlit:latest
+    build:
+      context: .
+      dockerfile: Dockerfile.streamlit
+    container_name: retail-ai-streamlit
+    environment:
+      RETAIL_AI_BACKEND_URL: http://backend:8000
+    ports:
+      - "8501:8501"
+    depends_on:
+      - backend
+
+  mongo:
+    image: mongo:7
+    container_name: retail-ai-mongo
+    ports:
+      - "27017:27017"
+    volumes:
+      - mongo-data:/data/db
+
+volumes:
+  mongo-data:

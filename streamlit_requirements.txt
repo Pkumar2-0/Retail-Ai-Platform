@@ -1,0 +1,5 @@
+streamlit==1.57.0
+requests
+pandas==3.0.3
+altair
+pyarrow==24.0.0

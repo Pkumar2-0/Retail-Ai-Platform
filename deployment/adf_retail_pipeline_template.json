@@ -1,0 +1,94 @@
+{
+  "name": "retail-raw-staged-curated-pipeline",
+  "properties": {
+    "description": "Azure Data Factory pipeline template for the Retail AI Platform. Ingests raw Walmart CSV into the raw zone, then triggers a Databricks/Fabric PySpark transformation for staged and curated parquet outputs.",
+    "parameters": {
+      "rawInputPath": {
+        "type": "String",
+        "defaultValue": "retail/raw/Walmart.csv"
+      },
+      "notebookPath": {
+        "type": "String",
+        "defaultValue": "/Shared/retail_pyspark_pipeline"
+      }
+    },
+    "activities": [
+      {
+        "name": "CopyRawWalmartCsvToLake",
+        "type": "Copy",
+        "dependsOn": [],
+        "policy": {
+          "timeout": "0.12:00:00",
+          "retry": 1,
+          "retryIntervalInSeconds": 30
+        },
+        "typeProperties": {
+          "source": {
+            "type": "DelimitedTextSource",
+            "storeSettings": {
+              "type": "AzureBlobFSReadSettings",
+              "recursive": false
+            },
+            "formatSettings": {
+              "type": "DelimitedTextReadSettings"
+            }
+          },
+          "sink": {
+            "type": "DelimitedTextSink",
+            "storeSettings": {
+              "type": "AzureBlobFSWriteSettings"
+            },
+            "formatSettings": {
+              "type": "DelimitedTextWriteSettings",
+              "quoteAllText": true,
+              "fileExtension": ".csv"
+            }
+          },
+          "enableStaging": false
+        },
+        "inputs": [
+          {
+            "referenceName": "RawWalmartCsvDataset",
+            "type": "DatasetReference",
+            "parameters": {
+              "path": "@pipeline().parameters.rawInputPath"
+            }
+          }
+        ],
+        "outputs": [
+          {
+            "referenceName": "LakeRawWalmartCsvDataset",
+            "type": "DatasetReference",
+            "parameters": {
+              "path": "retail/raw/Walmart.csv"
+            }
+          }
+        ]
+      },
+      {
+        "name": "RunRetailPySparkTransformation",
+        "type": "DatabricksNotebook",
+        "dependsOn": [
+          {
+            "activity": "CopyRawWalmartCsvToLake",
+            "dependencyConditions": [
+              "Succeeded"
+            ]
+          }
+        ],
+        "policy": {
+          "timeout": "0.12:00:00",
+          "retry": 1,
+          "retryIntervalInSeconds": 30
+        },
+        "typeProperties": {
+          "notebookPath": "@pipeline().parameters.notebookPath"
+        },
+        "linkedServiceName": {
+          "referenceName": "AzureDatabricksLinkedService",
+          "type": "LinkedServiceReference"
+        }
+      }
+    ]
+  }
+}

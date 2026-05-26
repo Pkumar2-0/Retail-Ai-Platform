@@ -1,0 +1,62 @@
+# Byte-compiled / optimized / DLL files
+__pycache__/
+*.py[cod]
+*$py.class
+
+# C extensions
+*.so
+
+# Distribution / packaging
+.Python
+build/
+develop-eggs/
+dist/
+downloads/
+eggs/
+.eggs/
+lib/
+lib64/
+parts/
+sdist/
+var/
+*.egg-info/
+.installed.cfg
+*.egg
+
+# Virtual environment
+venv/
+venv.bak/
+env/
+ENV/
+venv/*
+
+# PyCharm
+.idea/
+
+# VS Code
+.vscode/
+
+# Environment variables
+.env
+
+# macOS
+.DS_Store
+
+# Logs
+*.log
+
+# SQLite
+*.sqlite3
+
+# datasets and large files
+data_pipeline/storage/
+ml/datasets/
+ml/saved_models/
+ml/outputs/
+rag/vector_store/
+rag/documents/
+*.parquet
+*.csv
+*.pkl
+*.bin
+

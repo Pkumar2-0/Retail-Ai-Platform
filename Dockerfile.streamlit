@@ -1,0 +1,22 @@
+FROM python:3.11-slim
+
+ENV PYTHONDONTWRITEBYTECODE=1
+ENV PYTHONUNBUFFERED=1
+ENV PIP_NO_CACHE_DIR=1
+
+WORKDIR /app
+
+COPY streamlit_requirements.txt .
+RUN pip install --upgrade pip \
+    && pip install -r streamlit_requirements.txt
+
+COPY streamlit_app.py .
+COPY ml/datasets ./ml/datasets
+COPY data_pipeline/storage ./data_pipeline/storage
+COPY deployment ./deployment
+COPY data_pipeline/transformation ./data_pipeline/transformation
+
+EXPOSE 8501
+
+CMD ["streamlit", "run", "streamlit_app.py", "--server.address", "0.0.0.0", "--server.port", "8501"]
+
