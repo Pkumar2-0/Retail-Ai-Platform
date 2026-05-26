@@ -23,7 +23,7 @@ cffi==2.0.0
 charset-normalizer==3.4.7
 chroma-hnswlib==0.7.3
 chromadb==0.4.24
-click==8.4.1
+click==8.1.7
 colorama==0.4.6
 crewai-cli==1.14.5
 crewai-core==1.14.5
