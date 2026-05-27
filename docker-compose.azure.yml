@@ -1,0 +1,31 @@
+﻿version: '3.9'
+services:
+  backend:
+    build:
+      context: .
+      dockerfile: Dockerfile.backend
+    image: retail-ai-backend:latest
+    environment:
+      DATABASE_NAME: retail_ai
+      MONGO_URI: 
+      AZURE_OPENAI_ENDPOINT: 
+      AZURE_OPENAI_API_KEY: 
+      AZURE_OPENAI_DEPLOYMENT_NAME: 
+      AZURE_OPENAI_EMBEDDING_DEPLOYMENT_NAME: 
+      AZURE_SEARCH_ENDPOINT: 
+      AZURE_SEARCH_API_KEY: 
+      AZURE_SEARCH_INDEX_NAME: 
+    ports:
+      - "8000:8000"
+
+  streamlit:
+    build:
+      context: .
+      dockerfile: Dockerfile.streamlit
+    image: retail-ai-streamlit:latest
+    environment:
+      RETAIL_AI_BACKEND_URL: http://backend:8000
+    ports:
+      - "8501:8501"
+    depends_on:
+      - backend
