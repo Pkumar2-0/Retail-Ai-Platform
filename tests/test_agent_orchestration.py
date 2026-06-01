@@ -14,7 +14,7 @@ def test_select_agents_for_cross_function_retail_question():
     assert selected == [ML_NAME, DOCUMENT_NAME, ANALYST_NAME]
 
 
-def test_synthesize_response_combines_multiple_agent_messages():
+def test_synthesize_response_requires_azure_result_for_final_answer():
     response = synthesize_response(
         "How should we plan inventory?",
         [
@@ -31,11 +31,14 @@ def test_synthesize_response_combines_multiple_agent_messages():
                 content="Restock based on forecast demand.",
             ),
         ],
+        azure_result=AzureAgentResult(
+            enabled=False,
+            error="Azure OpenAI settings are missing.",
+        ),
     )
 
-    assert "Multi-agent response" in response
-    assert "Sales are highest in December." in response
-    assert "Restock based on forecast demand." in response
+    assert "Azure GenAI Agent could not answer this request" in response
+    assert "Azure OpenAI settings are missing." in response
 
 
 def test_synthesize_response_prefers_azure_result_when_available():

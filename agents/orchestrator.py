@@ -73,20 +73,15 @@ def synthesize_response(query, agent_messages, azure_result=None):
     if azure_result and azure_result.response:
         return azure_result.response
 
-    if len(agent_messages) == 1:
-        return agent_messages[0].content
-
-    sections = [
-        f"{message.sender}: {message.content}"
-        for message in agent_messages
-    ]
+    if azure_result and azure_result.error:
+        return (
+            "Azure GenAI Agent could not answer this request. "
+            f"{azure_result.error}"
+        )
 
     return (
-        "Multi-agent response:\n"
-        f"Question: {query}\n\n"
-        + "\n\n".join(sections)
-        + "\n\nCoordinator summary: Use the analytics answer for numeric sales context, "
-        "the document answer for policy/process grounding, and the ML answer for model-driven interpretation."
+        "Azure GenAI Agent is required for chat responses, but it did not return an answer. "
+        "Check the Azure OpenAI configuration and try again."
     )
 
 
@@ -118,29 +113,28 @@ def orchestrator(query):
     messages.extend(agent_messages)
 
     azure_result = synthesize_with_azure(query, agent_messages)
-    if azure_result.enabled:
-        messages.append(
-            AgentMessage(
-                sender=ORCHESTRATOR_NAME,
-                receiver=AZURE_NAME,
-                intent="synthesize_specialist_outputs",
-                content=query,
-                metadata={"input_agents": selected_agents},
-            )
+    messages.append(
+        AgentMessage(
+            sender=ORCHESTRATOR_NAME,
+            receiver=AZURE_NAME,
+            intent="answer_with_azure_agent",
+            content=query,
+            metadata={"input_agents": selected_agents},
         )
-        messages.append(
-            AgentMessage(
-                sender=AZURE_NAME,
-                receiver=ORCHESTRATOR_NAME,
-                intent="final_synthesis",
-                content=azure_result.response or "",
-                metadata={
-                    "provider": "Azure OpenAI",
-                    "status": "success" if azure_result.response else "fallback",
-                    "error": azure_result.error,
-                },
-            )
+    )
+    messages.append(
+        AgentMessage(
+            sender=AZURE_NAME,
+            receiver=ORCHESTRATOR_NAME,
+            intent="final_answer",
+            content=azure_result.response or "",
+            metadata={
+                "provider": "Azure OpenAI",
+                "status": "success" if azure_result.response else "error",
+                "error": azure_result.error,
+            },
         )
+    )
 
     response = synthesize_response(query, agent_messages, azure_result=azure_result)
 
@@ -157,7 +151,7 @@ def orchestrator(query):
             "multi_agent_orchestration": True,
             "mcp_ready_message_contract": True,
             "azure_genai_agent": azure_result.enabled,
-            "azure_genai_status": "success" if azure_result.response else "fallback",
+            "azure_genai_status": "success" if azure_result.response else "error",
             "azure_genai_error": azure_result.error,
         },
     }
