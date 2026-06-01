@@ -1,16 +1,22 @@
-from motor.motor_asyncio import AsyncIOMotorClient
-from dotenv import load_dotenv
 import os
+
+import certifi
+from dotenv import load_dotenv
+from motor.motor_asyncio import AsyncIOMotorClient
 
 load_dotenv()
 
-MONGO_URI = os.getenv("MONGO_URI")
+MONGO_URI = os.getenv("MONGO_URI") or os.getenv("MONGO_URL")
 DATABASE_NAME = os.getenv("DATABASE_NAME", "retail_ai")
 LOCAL_MONGO_URI = os.getenv("LOCAL_MONGO_URI", "mongodb://127.0.0.1:27017")
 
 
 def create_client(uri: str) -> AsyncIOMotorClient:
-    return AsyncIOMotorClient(uri, serverSelectionTimeoutMS=5000)
+    client_options = {"serverSelectionTimeoutMS": 5000}
+    if uri.startswith("mongodb+srv://"):
+        client_options.update({"tls": True, "tlsCAFile": certifi.where()})
+
+    return AsyncIOMotorClient(uri, **client_options)
 
 
 client = None

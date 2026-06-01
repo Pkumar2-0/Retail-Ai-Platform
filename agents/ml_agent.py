@@ -1,4 +1,4 @@
-from agents.data_utils import get_ml_model_context, get_direct_ml_answer
+from agents.data_utils import get_ml_model_context
 from agents.schemas import AgentMessage
 
 
@@ -8,16 +8,11 @@ AGENT_NAME = "ML Expert Agent"
 
 def ml_agent(query):
 
-    direct_answer = get_direct_ml_answer(query)
-    if direct_answer:
-        return direct_answer
-
     model_context = get_ml_model_context()
     return (
-        "Retail machine learning summary:\n"
+        "Retail machine learning context for Azure answer generation:\n"
         f"{model_context}\n\n"
-        f"Your query: {query}\n"
-        "This platform uses forecasting and anomaly detection to support retail planning and to surface unusual sales events."
+        f"User question: {query}"
     )
 
 

@@ -1,4 +1,5 @@
 import os
+from functools import lru_cache
 
 from dotenv import load_dotenv
 from openai import OpenAI
@@ -10,6 +11,7 @@ from backend.services.azure_search_service import (
 
 AZURE_EMBEDDING_DIMENSIONS = 384
 LOCAL_EMBEDDING_MODEL_NAME = "all-MiniLM-L6-v2"
+OPENAI_TIMEOUT_SECONDS = 10
 
 
 def _get_azure_query_embedding(query):
@@ -27,6 +29,7 @@ def _get_azure_query_embedding(query):
     client = OpenAI(
         api_key=api_key,
         base_url=endpoint.rstrip("/"),
+        timeout=OPENAI_TIMEOUT_SECONDS,
     )
     response = client.embeddings.create(
         model=deployment,
@@ -36,10 +39,15 @@ def _get_azure_query_embedding(query):
     return response.data[0].embedding
 
 
-def _get_local_query_embedding(query):
+@lru_cache(maxsize=1)
+def _get_local_embedding_model():
     from sentence_transformers import SentenceTransformer
 
-    embedding_model = SentenceTransformer(LOCAL_EMBEDDING_MODEL_NAME)
+    return SentenceTransformer(LOCAL_EMBEDDING_MODEL_NAME, local_files_only=True)
+
+
+def _get_local_query_embedding(query):
+    embedding_model = _get_local_embedding_model()
     return embedding_model.encode(query).tolist()
 
 def _search_chroma_documents(query_embedding, n_results=3):
@@ -88,10 +96,27 @@ def search_documents(query):
             }
 
     if search_backend is None:
-        query_embedding = _get_local_query_embedding(query)
-        search_backend = _search_chroma_documents(query_embedding)
+        try:
+            query_embedding = _get_local_query_embedding(query)
+            search_backend = _search_chroma_documents(query_embedding)
+        except Exception as exc:
+            return {
+                "answer": "Document search is unavailable because no Azure AI Search configuration or local Chroma collection is ready.",
+                "documents": [],
+                "sources": [],
+                "backend": "Unavailable",
+                "fallback_reason": str(exc),
+            }
 
     documents = search_backend["documents"]
+    if not documents:
+        return {
+            "answer": "No matching retail documents were found.",
+            "documents": [],
+            "sources": search_backend.get("sources", []),
+            "backend": search_backend.get("backend", "ChromaDB"),
+            "fallback_reason": search_backend.get("fallback_reason"),
+        }
 
     # Simple AI-style response
     answer = f"""

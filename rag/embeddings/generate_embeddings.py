@@ -1,10 +1,16 @@
 import os
+import sys
+from pathlib import Path
 
 import chromadb
 
 from sentence_transformers import SentenceTransformer
 
 from langchain_community.document_loaders import PyPDFLoader
+
+PROJECT_ROOT = Path(__file__).resolve().parents[2]
+if str(PROJECT_ROOT) not in sys.path:
+    sys.path.insert(0, str(PROJECT_ROOT))
 
 from rag.chunking.text_chunker import split_text
 
